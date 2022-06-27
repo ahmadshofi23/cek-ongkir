@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:rajaongkir/app/data/models/city_models.dart';
+import 'package:rajaongkir/app/data/models/courier_model.dart';
 
 import '../../../data/models/provinsi_models.dart';
 import 'package:http/http.dart' as http;
@@ -19,6 +21,19 @@ class HomeController extends GetxController {
   double berat = 0.0;
   String satuan = "Gram";
   late TextEditingController beratC;
+  var codeKurir = "".obs;
+  var hiddenButton = true.obs;
+
+  void showButton() {
+    if (kotaAsalId != null &&
+        kotaTujuanId != null &&
+        berat > 0 &&
+        codeKurir != "") {
+      hiddenButton.value = false;
+    } else {
+      hiddenButton.value = true;
+    }
+  }
 
   void conversiBerat(String value) {
     berat = double.tryParse(value) ?? 0.0;
@@ -41,6 +56,7 @@ class HomeController extends GetxController {
     }
     print("$berat gram");
     // print(berat);
+    showButton();
   }
 
   void conversiSatuan(String value) {
@@ -64,6 +80,7 @@ class HomeController extends GetxController {
     }
     satuan = value;
     print("$berat gram");
+    showButton();
   }
 
   @override
@@ -123,5 +140,43 @@ class HomeController extends GetxController {
       print(e);
     }
     return models;
+  }
+
+  void ongkosKirim() async {
+    Uri url = Uri.parse("https://api.rajaongkir.com/starter/cost");
+    try {
+      final res = await http.post(url, headers: {
+        "key": "8993d65330dda201b54a3560bcc08fd6",
+        "content-type": "application/x-www-form-urlencoded"
+      }, body: {
+        "origin": "$kotaAsalId",
+        "destination": "$kotaTujuanId",
+        "weight": "$berat",
+        "courier": "$codeKurir",
+      });
+
+      var data = (jsonDecode(res.body) as Map<String, dynamic>);
+      var result = data["rajaongkir"]["results"] as List<dynamic>;
+      var listAllCourier = Courier.fromJsonList(result);
+      var courier = listAllCourier[0];
+
+      Get.defaultDialog(
+        title: courier.name!,
+        content: Column(
+          children: courier.costs!
+              .map((e) => ListTile(
+                    title: Text("${e.service}"),
+                    subtitle: Text(courier.code == "pos"
+                        ? "${e.cost![0].etd}"
+                        : "${e.cost![0].etd} HARI"),
+                    trailing: Text("Rp.${e.cost![0].value}"),
+                  ))
+              .toList(),
+        ),
+      );
+      print(listAllCourier[0]);
+    } catch (err) {
+      print(err);
+    }
   }
 }

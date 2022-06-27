@@ -58,15 +58,19 @@ class Kota extends GetView<HomeController> {
             print("Kota Asal : ${value.cityId}");
           }
           // print(controller.provId.value);
+          controller.showButton();
         } else {
           if (tipe == "asal") {
             controller.hiddenKotaAsal.value = true;
             controller.provAsalId.value = 0;
             // print(value.provinceId);
+            controller.codeKurir.value = "";
           } else {
             controller.hiddenKotaTujuan.value = true;
             controller.provTujuanId.value = 0;
+            controller.codeKurir.value = "";
           }
+          controller.showButton();
         }
       },
     );
